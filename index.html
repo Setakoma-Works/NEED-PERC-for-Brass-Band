@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEED-PERC for Brass Band</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --brand: #2563eb;
+            --dark: #1a1c23;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: 'Noto Sans JP', sans-serif; }
+        .mono { font-family: 'Roboto Mono', monospace; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Modal */
+        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:100; align-items:center; justify-content:center; }
+        .modal-overlay.open { display:flex; }
+
+        /* Note tooltip inline */
+        .note-badge { max-width: 240px; white-space: normal; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+
+        @media print {
+            header, nav, .no-print, button:not(.print-btn) { display: none !important; }
+            body { background: white; }
+            .tab-content { display: none !important; }
+            #content-summary { display: block !important; }
+            .summary-container { border: none !important; box-shadow: none !important; }
+            .print-header { display: block !important; }
+            .note-text { display: block !important; }
+        }
+        .print-header { display: none; }
+        .note-text { display: block; }
+
+        /* Instrument button animation */
+        @keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.12)} 100%{transform:scale(1)} }
+        .inst-btn-active { animation: pop 0.15s ease; }
+
+        /* Custom instrument chip shimmer */
+        @keyframes shimmer { from{opacity:0.6} to{opacity:1} }
+        .custom-chip { animation: shimmer 0.3s ease; }
+
+        /* Toast */
+        #toast { position:fixed; bottom:2rem; left:50%; transform:translateX(-50%); background:#1a1c23; color:white; padding:0.75rem 1.5rem; border-radius:999px; font-size:0.75rem; font-weight:700; letter-spacing:0.1em; opacity:0; transition:opacity 0.3s; pointer-events:none; z-index:999; }
+        #toast.show { opacity:1; }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Note Edit Modal -->
+<div id="note-modal" class="modal-overlay" onclick="closeNoteModal(event)">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6" onclick="event.stopPropagation()">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-slate-800" id="modal-inst-label"></h3>
+            <button onclick="closeNoteModal()" class="text-slate-300 hover:text-slate-600 text-xl">✕</button>
+        </div>
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">仕様・メモ（サイズ／鍵盤数／材質など）</p>
+        <textarea id="modal-note-input" rows="4" placeholder="例: 4.3オクターブ、ローズウッド鍵盤&#10;例: 直径22インチ、スタンド込み&#10;例: C2〜F5、鉄製" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm outline-none focus:border-blue-500 resize-none transition-all"></textarea>
+        <div class="flex gap-3 mt-4">
+            <button onclick="saveNote()" class="flex-1 bg-[#1a1c23] text-white py-3 rounded-xl font-bold text-sm hover:bg-blue-600 transition-all">保存</button>
+            <button onclick="clearNote()" class="px-4 py-3 rounded-xl font-bold text-sm text-slate-400 hover:text-red-500 border border-slate-200 transition-all">消去</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Custom Instrument to Master Modal -->
+<div id="add-inst-modal" class="modal-overlay" onclick="closeAddInstModal(event)">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6" onclick="event.stopPropagation()">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-slate-800">楽器をマスターに追加</h3>
+            <button onclick="closeAddInstModal()" class="text-slate-300 hover:text-slate-600 text-xl">✕</button>
+        </div>
+        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">楽器名を入力（保存後、常にリストに表示されます）</p>
+        <input type="text" id="add-inst-input" placeholder="例: スティールパン、カウベル..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm outline-none focus:border-blue-500 transition-all" onkeydown="if(event.key==='Enter')confirmAddInst()">
+        <button onclick="confirmAddInst()" class="w-full mt-4 bg-[#1a1c23] text-white py-3 rounded-xl font-bold text-sm hover:bg-blue-600 transition-all">マスターに追加して選択する</button>
+    </div>
+</div>
+
+<!-- Header -->
+<header class="bg-[#1a1c23] text-white px-6 py-5 shadow-xl no-print">
+    <div class="max-w-5xl mx-auto flex justify-between items-center">
+        <div class="flex items-baseline gap-3">
+            <h1 class="mono text-3xl font-bold tracking-tighter">NEED-PERC</h1>
+            <span class="text-[10px] font-bold text-blue-400 tracking-[0.3em] uppercase">for Brass Band</span>
+        </div>
+        <button onclick="resetData()" class="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-red-400 transition-colors">System Reset</button>
+    </div>
+</header>
+
+<main class="max-w-5xl mx-auto px-4 py-8">
+
+    <!-- Nav -->
+    <nav class="flex mb-8 bg-slate-200 p-1 rounded-xl shadow-inner no-print">
+        <button onclick="switchTab('input')"     id="tab-input"     class="tab-btn flex-1 py-3 px-4 rounded-lg font-bold transition-all text-blue-600 bg-white shadow-sm text-sm">1. PROGRAM</button>
+        <button onclick="switchTab('inventory')" id="tab-inventory" class="tab-btn flex-1 py-3 px-4 rounded-lg font-bold transition-all text-slate-500 hover:text-slate-700 text-sm">2. INVENTORY</button>
+        <button onclick="switchTab('summary')"   id="tab-summary"   class="tab-btn flex-1 py-3 px-4 rounded-lg font-bold transition-all text-slate-500 hover:text-slate-700 text-sm">3. SUMMARY</button>
+    </nav>
+
+    <!-- ═══ TAB 1: PROGRAM ═══ -->
+    <section id="content-input" class="tab-content active space-y-8">
+        <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h2 class="text-xl font-bold text-slate-800 border-l-4 border-blue-600 pl-3 mb-6">曲目と楽器の登録</h2>
+            <div class="space-y-6">
+
+                <!-- Song name -->
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Song Title</label>
+                    <input type="text" id="input-song-name" placeholder="Music of the Spheres"
+                        class="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition-all text-lg font-bold">
+                </div>
+
+                <!-- Instrument selector -->
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Instrument Selector</label>
+                        <button onclick="openAddInstModal()" class="text-[10px] font-bold text-blue-500 hover:text-blue-700 uppercase tracking-widest flex items-center gap-1 transition-colors">
+                            <span class="text-base leading-none">+</span> 楽器をマスターに追加
+                        </button>
+                    </div>
+                    <div id="instrument-selector" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2"></div>
+                </div>
+
+                <!-- Register button -->
+                <div class="flex justify-end pt-4 border-t border-slate-50">
+                    <button onclick="registerSong()" class="bg-[#1a1c23] text-white px-10 py-4 rounded-xl font-bold hover:bg-blue-600 transition-all shadow-lg active:scale-95">
+                        曲を登録する
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Registered songs -->
+        <div class="space-y-4">
+            <h3 class="font-bold text-slate-500 text-xs uppercase tracking-widest px-1">Registered History</h3>
+            <div id="songs-list-container" class="grid gap-3 sm:grid-cols-2"></div>
+        </div>
+    </section>
+
+    <!-- ═══ TAB 2: INVENTORY ═══ -->
+    <section id="content-inventory" class="tab-content space-y-6">
+        <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+            <h2 class="text-xl font-bold text-slate-800 border-l-4 border-emerald-500 pl-3 mb-1">自団体所有楽器</h2>
+            <p class="text-sm text-slate-400 ml-4 mb-8">ここに登録した楽器は「要レンタル」から除外されます。<br>
+            <span class="text-[10px]">📝 ボタンでサイズ・仕様などのメモを登録できます。</span></p>
+
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 mb-3 uppercase tracking-widest">Select Owned</label>
+                <div id="inventory-presets" class="flex flex-wrap gap-2"></div>
+            </div>
+
+            <div class="pt-8 border-t border-slate-100 mt-8">
+                <label class="block text-[10px] font-bold text-slate-400 mb-4 uppercase tracking-widest">Active Inventory List</label>
+                <div id="inventory-list" class="space-y-2"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ TAB 3: SUMMARY ═══ -->
+    <section id="content-summary" class="tab-content">
+        <div class="bg-white p-10 rounded-2xl shadow-sm border border-slate-200 summary-container">
+            <!-- Print header -->
+            <div class="print-header mb-10 pb-6 border-b-2 border-slate-900">
+                <div class="flex justify-between items-baseline">
+                    <h1 class="mono text-3xl font-bold tracking-tighter">NEED-PERC</h1>
+                    <p class="text-slate-500 text-xs font-bold" id="print-date"></p>
+                </div>
+                <p class="text-[10px] font-bold text-blue-600 tracking-[0.2em] uppercase mt-1">Percussion Requirement List</p>
+            </div>
+
+            <div class="flex justify-between items-end mb-10 no-print">
+                <div>
+                    <h2 class="text-3xl font-bold text-slate-900 tracking-tight">SUMMARY</h2>
+                    <p class="text-sm text-slate-400 font-medium">全プログラムの楽器重複を自動整理</p>
+                </div>
+                <button onclick="window.print()" class="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all">
+                    📄 PRINT / PDF
+                </button>
+            </div>
+
+            <div class="space-y-12">
+                <!-- Rental -->
+                <div>
+                    <h3 class="text-xs font-bold text-orange-600 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-orange-500 rounded-full inline-block"></span> 1. 要手配・レンタル楽器
+                    </h3>
+                    <div id="summary-rental-list" class="grid gap-px bg-slate-200 border border-slate-200 rounded-xl overflow-hidden"></div>
+                </div>
+
+                <!-- Owned -->
+                <div>
+                    <h3 class="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full inline-block"></span> 2. 自前確保・所有楽器
+                    </h3>
+                    <div id="summary-owned-list" class="grid gap-px bg-slate-200 border border-slate-200 rounded-xl overflow-hidden"></div>
+                </div>
+
+                <!-- Per-song breakdown -->
+                <div class="no-print">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-slate-300 rounded-full inline-block"></span> 3. プログラム別編成内訳
+                    </h3>
+                    <div id="summary-details-list" class="grid gap-3 sm:grid-cols-2"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<script>
+// ── Default data ─────────────────────────────────────────────
+const DEFAULT_INSTRUMENTS = [
+    "ドラムセット","スネアドラム","バスドラム","合わせシンバル","サスペンデッドシンバル",
+    "ティンパニ","コンサートトム","グロッケン","シロフォン","ヴィブラフォン",
+    "マリンバ","チューブラーベル","銅鑼","ウィンドチャイム","トライアングル",
+    "カスタネット","タンバリン","コンガ","ボンゴ","ウッドブロック","ウィップスティック"
+];
+
+// ── State ─────────────────────────────────────────────────────
+let state = {
+    songs: [],
+    inventory: ["スネアドラム","バスドラム","ティンパニ","合わせシンバル"],
+    customInstruments: [],   // user-added master instruments
+    instrumentNotes: {},     // {instName: "note string"}
+    selectedInForm: []
+};
+
+// ── Storage ───────────────────────────────────────────────────
+function saveData() { localStorage.setItem('need_perc_v2', JSON.stringify(state)); }
+function loadData() {
+    const s = localStorage.getItem('need_perc_v2');
+    if (s) state = { ...state, ...JSON.parse(s) };
+}
+
+function allInstruments() {
+    return [...DEFAULT_INSTRUMENTS, ...state.customInstruments];
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ── Tab switching ─────────────────────────────────────────────
+function switchTab(id) {
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('content-' + id).classList.add('active');
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('text-blue-600','bg-white','shadow-sm');
+        b.classList.add('text-slate-500');
+    });
+    const btn = document.getElementById('tab-' + id);
+    btn.classList.remove('text-slate-500');
+    btn.classList.add('text-blue-600','bg-white','shadow-sm');
+    if (id === 'summary') renderSummary();
+    if (id === 'inventory') renderInventory();
+}
+
+// ── Note Modal ────────────────────────────────────────────────
+let _noteTarget = null;
+function openNoteModal(inst) {
+    _noteTarget = inst;
+    document.getElementById('modal-inst-label').textContent = inst;
+    document.getElementById('modal-note-input').value = state.instrumentNotes[inst] || '';
+    document.getElementById('note-modal').classList.add('open');
+    setTimeout(() => document.getElementById('modal-note-input').focus(), 100);
+}
+function closeNoteModal(e) {
+    if (e && e.target !== document.getElementById('note-modal')) return;
+    document.getElementById('note-modal').classList.remove('open');
+}
+function saveNote() {
+    const val = document.getElementById('modal-note-input').value.trim();
+    if (val) state.instrumentNotes[_noteTarget] = val;
+    else delete state.instrumentNotes[_noteTarget];
+    saveData(); renderInventory(); renderFormSelectors();
+    document.getElementById('note-modal').classList.remove('open');
+    showToast('メモを保存しました');
+}
+function clearNote() {
+    document.getElementById('modal-note-input').value = '';
+}
+
+// ── Add Instrument to Master Modal ───────────────────────────
+function openAddInstModal() {
+    document.getElementById('add-inst-input').value = '';
+    document.getElementById('add-inst-modal').classList.add('open');
+    setTimeout(() => document.getElementById('add-inst-input').focus(), 100);
+}
+function closeAddInstModal(e) {
+    if (e && e.target !== document.getElementById('add-inst-modal')) return;
+    document.getElementById('add-inst-modal').classList.remove('open');
+}
+function confirmAddInst() {
+    const val = document.getElementById('add-inst-input').value.trim();
+    if (!val) return;
+    if (allInstruments().includes(val)) {
+        showToast('すでにリストにあります');
+        document.getElementById('add-inst-modal').classList.remove('open');
+        // select it
+        if (!state.selectedInForm.includes(val)) state.selectedInForm.push(val);
+        renderFormSelectors();
+        return;
+    }
+    state.customInstruments.push(val);
+    state.selectedInForm.push(val);
+    saveData();
+    renderFormSelectors();
+    document.getElementById('add-inst-modal').classList.remove('open');
+    showToast(`「${val}」をマスターに追加しました`);
+}
+
+// ── Form instrument selector ──────────────────────────────────
+function toggleFormInstrument(inst) {
+    const i = state.selectedInForm.indexOf(inst);
+    if (i === -1) state.selectedInForm.push(inst);
+    else state.selectedInForm.splice(i, 1);
+    renderFormSelectors();
+}
+
+function renderFormSelectors() {
+    const container = document.getElementById('instrument-selector');
+    const all = allInstruments();
+    container.innerHTML = all.map(inst => {
+        const active = state.selectedInForm.includes(inst);
+        const isCustom = state.customInstruments.includes(inst);
+        const hasNote = !!state.instrumentNotes[inst];
+        return `<button onclick="toggleFormInstrument('${esc(inst)}')"
+            class="text-[11px] p-2.5 rounded-lg border transition-all font-bold text-left relative
+            ${active ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-white border-slate-200 text-slate-500 hover:border-blue-200'}
+            ${isCustom ? 'border-dashed' : ''}">
+            ${inst}
+            ${hasNote ? `<span class="absolute top-1 right-1 w-1.5 h-1.5 rounded-full ${active ? 'bg-blue-300' : 'bg-slate-300'}"></span>` : ''}
+        </button>`;
+    }).join('');
+}
+
+// ── Song list ─────────────────────────────────────────────────
+function registerSong() {
+    const nameInput = document.getElementById('input-song-name');
+    const name = nameInput.value.trim() || nameInput.placeholder;
+    if (state.selectedInForm.length === 0) {
+        showToast('楽器を1つ以上選んでください'); return;
+    }
+    state.songs.push({ id: Date.now(), name, instruments: [...state.selectedInForm] });
+    nameInput.value = '';
+    state.selectedInForm = [];
+    saveData(); renderFormSelectors(); renderSongsList();
+    showToast(`「${name}」を登録しました`);
+}
+
+function deleteSong(id) {
+    state.songs = state.songs.filter(s => s.id !== id);
+    saveData(); renderSongsList();
+}
+
+function renderSongsList() {
+    const c = document.getElementById('songs-list-container');
+    if (!state.songs.length) {
+        c.innerHTML = `<div class="col-span-full text-center py-12 text-slate-300 bg-white rounded-2xl border border-dashed border-slate-200 font-bold text-xs uppercase tracking-widest">No Songs Added</div>`;
+        return;
+    }
+    c.innerHTML = [...state.songs].reverse().map(song => `
+        <div class="bg-white p-5 rounded-xl border border-slate-200 flex justify-between items-start group">
+            <div class="flex-1">
+                <h4 class="font-bold text-slate-800">${song.name}</h4>
+                <div class="flex flex-wrap gap-1 mt-2">
+                    ${song.instruments.map(i => `<span class="text-[9px] font-bold bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded">${i}</span>`).join('')}
+                </div>
+            </div>
+            <button onclick="deleteSong(${song.id})" class="text-slate-200 hover:text-red-500 p-2 transition-colors ml-2 flex-shrink-0">✕</button>
+        </div>
+    `).join('');
+}
+
+// ── Inventory ─────────────────────────────────────────────────
+function toggleInventory(inst) {
+    const i = state.inventory.indexOf(inst);
+    if (i === -1) state.inventory.push(inst);
+    else state.inventory.splice(i, 1);
+    saveData(); renderInventory();
+}
+
+function removeFromInventory(inst) {
+    state.inventory = state.inventory.filter(x => x !== inst);
+    saveData(); renderInventory();
+}
+
+function renderInventory() {
+    // Preset buttons
+    const presets = document.getElementById('inventory-presets');
+    presets.innerHTML = allInstruments().map(inst => {
+        const isOwned = state.inventory.includes(inst);
+        return `<button onclick="toggleInventory('${esc(inst)}')"
+            class="text-[11px] px-3 py-2 rounded-lg border transition-all font-bold
+            ${isOwned ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-400 hover:border-emerald-200'}">
+            ${isOwned ? '✓ ' : '+ '}${inst}
+        </button>`;
+    }).join('');
+
+    // Owned list with notes
+    const list = document.getElementById('inventory-list');
+    const owned = [...state.inventory].sort();
+    list.innerHTML = owned.map(inst => {
+        const note = state.instrumentNotes[inst];
+        return `
+        <div class="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 flex items-start gap-3">
+            <div class="flex-1">
+                <div class="flex items-center gap-2">
+                    <span class="font-bold text-emerald-700 text-sm">${inst}</span>
+                    ${note ? `<span class="text-[10px] bg-emerald-100 text-emerald-500 px-2 py-0.5 rounded font-bold">メモあり</span>` : ''}
+                </div>
+                ${note ? `<p class="text-[11px] text-emerald-500 mt-0.5 leading-relaxed">${note.replace(/\n/g,'　/　')}</p>` : ''}
+            </div>
+            <div class="flex items-center gap-2 flex-shrink-0">
+                <button onclick="openNoteModal('${esc(inst)}')" title="メモを編集"
+                    class="text-[10px] font-bold text-slate-400 hover:text-blue-500 transition-colors border border-slate-200 hover:border-blue-300 rounded-lg px-2 py-1 bg-white">
+                    📝 メモ
+                </button>
+                <button onclick="removeFromInventory('${esc(inst)}')" class="text-slate-200 hover:text-red-500 transition-colors text-sm">✕</button>
+            </div>
+        </div>`;
+    }).join('') || '<div class="text-slate-300 text-xs font-bold uppercase tracking-widest py-4">No instruments owned yet</div>';
+}
+
+// ── Summary ───────────────────────────────────────────────────
+function renderSummary() {
+    const usageMap = {};
+    state.songs.forEach(s => s.instruments.forEach(i => {
+        if (!usageMap[i]) usageMap[i] = [];
+        usageMap[i].push(s.name);
+    }));
+    const sorted = Object.keys(usageMap).sort();
+    const rentalEl = document.getElementById('summary-rental-list');
+    const ownedEl  = document.getElementById('summary-owned-list');
+    const detailEl = document.getElementById('summary-details-list');
+
+    rentalEl.innerHTML = ownedEl.innerHTML = detailEl.innerHTML = '';
+
+    function summaryRow(inst, isOwned) {
+        const note = state.instrumentNotes[inst];
+        return `<div class="p-5 bg-white">
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <div class="font-bold text-slate-800 text-base">${inst}</div>
+                    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wide mt-0.5">
+                        ${usageMap[inst].join(' / ')}
+                    </div>
+                    ${note ? `<div class="text-[11px] text-slate-500 mt-1.5 leading-relaxed border-l-2 ${isOwned ? 'border-emerald-300' : 'border-orange-300'} pl-2">${note.replace(/\n/g,'<br>')}</div>` : ''}
+                </div>
+                <div class="flex items-center gap-3 ml-4 flex-shrink-0">
+                    <span class="text-xs font-bold text-slate-400">${usageMap[inst].length}曲</span>
+                    <button onclick="openNoteModal('${esc(inst)}')" title="メモ" class="no-print text-[10px] font-bold text-slate-300 hover:text-blue-500 transition-colors border border-slate-100 hover:border-blue-300 rounded px-1.5 py-0.5">📝</button>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    sorted.forEach(inst => {
+        const isOwned = state.inventory.includes(inst);
+        if (isOwned) ownedEl.innerHTML += summaryRow(inst, true);
+        else rentalEl.innerHTML += summaryRow(inst, false);
+    });
+
+    if (!rentalEl.innerHTML) rentalEl.innerHTML = '<div class="p-8 text-slate-300 text-center font-bold bg-white text-xs uppercase tracking-widest">No Rentals Needed 🎉</div>';
+    if (!ownedEl.innerHTML)  ownedEl.innerHTML  = '<div class="p-8 text-slate-300 text-center font-bold bg-white text-xs uppercase tracking-widest">No Owned Instruments Matched</div>';
+
+    state.songs.forEach(song => {
+        detailEl.innerHTML += `
+        <div class="bg-white p-4 rounded-xl border border-slate-100">
+            <h4 class="font-bold text-slate-700 text-xs mb-2 border-b border-slate-50 pb-1">${song.name}</h4>
+            <p class="text-[10px] text-slate-400 font-medium leading-relaxed">${song.instruments.join(' / ')}</p>
+        </div>`;
+    });
+
+    document.getElementById('print-date').textContent = new Date().toLocaleDateString('ja-JP', {year:'numeric',month:'long',day:'numeric'});
+}
+
+// ── Reset ─────────────────────────────────────────────────────
+function resetData() {
+    if (confirm('すべてのデータをリセットしますか？\nThis will erase all songs, inventory, and notes.')) {
+        localStorage.removeItem('need_perc_v2');
+        location.reload();
+    }
+}
+
+// ── Helper ────────────────────────────────────────────────────
+function esc(str) { return str.replace(/'/g, "\\'"); }
+
+// ── Init ──────────────────────────────────────────────────────
+window.onload = () => {
+    loadData();
+    renderFormSelectors();
+    renderSongsList();
+    renderInventory();
+};
+</script>
+</body>
+</html>
