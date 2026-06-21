@@ -1,530 +1,905 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEED-PERC for Brass Band</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --brand: #2563eb;
-            --dark: #1a1c23;
-        }
-        * { box-sizing: border-box; }
-        body { font-family: 'Noto Sans JP', sans-serif; }
-        .mono { font-family: 'Roboto Mono', monospace; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEED-PERC for Brass Band</title>
+<style>
+/* ── Reset & Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
+  background: #f1f5f9;
+  min-height: 100vh;
+  color: #1e293b;
+  font-size: 14px;
+  line-height: 1.5;
+}
+button { cursor: pointer; font-family: inherit; border: none; background: none; }
+input, textarea { font-family: inherit; }
+textarea { resize: none; }
 
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+/* ── Variables ── */
+:root {
+  --blue:    #2563eb;
+  --blue-dk: #1d4ed8;
+  --dark:    #1a1c23;
+  --emerald: #059669;
+  --em-lt:   #d1fae5;
+  --em-bd:   #a7f3d0;
+  --em-tx:   #065f46;
+  --orange:  #ea580c;
+  --slate-50:  #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
+}
 
-        /* Modal */
-        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:100; align-items:center; justify-content:center; }
-        .modal-overlay.open { display:flex; }
+/* ── Layout ── */
+.container { max-width: 960px; margin: 0 auto; padding: 0 1rem; }
+main { padding: 2rem 1rem; max-width: 960px; margin: 0 auto; }
 
-        /* Note tooltip inline */
-        .note-badge { max-width: 240px; white-space: normal; }
+/* ── Header ── */
+header {
+  background: var(--dark);
+  color: white;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+.header-inner { max-width: 960px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+.logo { font-family: 'Courier New', 'Menlo', 'Monaco', monospace; font-size: 1.875rem; font-weight: 700; letter-spacing: -0.05em; color: white; }
+.logo-sub { font-size: 0.625rem; font-weight: 700; color: #60a5fa; letter-spacing: 0.3em; text-transform: uppercase; margin-left: 0.75rem; }
+.btn-reset { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--slate-500); background: none; border: none; transition: color 0.2s; }
+.btn-reset:hover { color: #f87171; }
 
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+/* ── Nav ── */
+nav {
+  display: flex;
+  background: var(--slate-200);
+  padding: 0.25rem;
+  border-radius: 0.75rem;
+  margin-bottom: 2rem;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+}
+.tab-btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  transition: all 0.2s;
+  color: var(--slate-500);
+  border: none;
+  background: none;
+}
+.tab-btn:hover { color: var(--slate-700); }
+.tab-btn.active {
+  color: var(--blue);
+  background: white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
 
-        @media print {
-            @page { size: A4; margin: 1.2cm 1.5cm; }
-            header, nav, .no-print, button { display: none !important; }
-            body { background: white; }
-            main { padding: 0 !important; max-width: 100% !important; }
-            .tab-content { display: none !important; }
-            #content-summary { display: block !important; }
-            .summary-container { border: none !important; box-shadow: none !important; padding: 0 !important; border-radius: 0 !important; }
-            .print-header { display: block !important; }
-            #summary-rental-list, #summary-owned-list { grid-template-columns: 1fr 1fr !important; }
-            .sum-row { padding: 0.35rem 0.55rem !important; }
-            .sum-row-name { font-size: 0.8rem !important; }
-            .sum-row-meta { font-size: 0.63rem !important; }
-            .sum-row-note { font-size: 0.63rem !important; margin-top: 0.1rem !important; }
-            .sum-row-count { font-size: 0.65rem !important; white-space: nowrap; }
-            .sum-section { margin-bottom: 0.6rem !important; }
-            .sum-section h3 { margin-bottom: 0.25rem !important; font-size: 0.6rem !important; }
-            #summary-details-list { grid-template-columns: 1fr 1fr 1fr !important; gap: 0.25rem !important; }
-            #summary-details-list > div { padding: 0.3rem 0.45rem !important; border-radius: 0.3rem; }
-            .space-y-12 { gap: 0 !important; }
-            .space-y-12 > div { margin-top: 0.7rem !important; }
-        }
-        .print-header { display: none; }
+/* ── Tab content ── */
+.tab-content { display: none; }
+.tab-content.active { display: block; }
 
-        /* Instrument button animation */
-        @keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.12)} 100%{transform:scale(1)} }
-        .inst-btn-active { animation: pop 0.15s ease; }
+/* ── Cards ── */
+.card {
+  background: white;
+  border: 1px solid var(--slate-200);
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.card + .card, .card + .section-block { margin-top: 2rem; }
 
-        /* Custom instrument chip shimmer */
-        @keyframes shimmer { from{opacity:0.6} to{opacity:1} }
-        .custom-chip { animation: shimmer 0.3s ease; }
+/* ── Section headings ── */
+.section-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--slate-800);
+  padding-left: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+.section-title.blue  { border-left: 4px solid var(--blue); }
+.section-title.green { border-left: 4px solid var(--emerald); }
 
-        /* Toast */
-        #toast { position:fixed; bottom:2rem; left:50%; transform:translateX(-50%); background:#1a1c23; color:white; padding:0.75rem 1.5rem; border-radius:999px; font-size:0.75rem; font-weight:700; letter-spacing:0.1em; opacity:0; transition:opacity 0.3s; pointer-events:none; z-index:999; }
-        #toast.show { opacity:1; }
-    </style>
+.label {
+  display: block;
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--slate-400);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+}
+
+/* ── Inputs ── */
+.input-text {
+  width: 100%;
+  background: var(--slate-50);
+  border: 1px solid var(--slate-200);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  outline: none;
+  transition: all 0.2s;
+}
+.input-text:focus { border-color: var(--blue); background: white; }
+
+.input-sm {
+  width: 100%;
+  background: var(--slate-50);
+  border: 1px solid var(--slate-200);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.input-sm:focus { border-color: var(--blue); }
+
+textarea.input-sm { min-height: 100px; }
+
+/* ── Instrument grid & buttons ── */
+.inst-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+@media (min-width: 480px) { .inst-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 680px) { .inst-grid { grid-template-columns: repeat(5, 1fr); } }
+
+.inst-btn {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.625rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--slate-200);
+  background: white;
+  color: var(--slate-500);
+  text-align: left;
+  position: relative;
+  transition: all 0.15s;
+  line-height: 1.3;
+}
+.inst-btn:hover { border-color: #93c5fd; }
+.inst-btn.active { background: var(--blue); border-color: var(--blue); color: white; box-shadow: 0 2px 8px rgba(37,99,235,0.3); }
+.inst-btn.custom { border-style: dashed; }
+.note-dot {
+  position: absolute;
+  top: 4px; right: 4px;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--slate-300);
+}
+.inst-btn.active .note-dot { background: #93c5fd; }
+
+/* ── Buttons ── */
+.btn-primary {
+  background: var(--dark);
+  color: white;
+  padding: 1rem 2.5rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  transition: all 0.2s;
+  border: none;
+}
+.btn-primary:hover { background: var(--blue); }
+.btn-primary:active { transform: scale(0.97); }
+
+.btn-blue {
+  background: var(--blue);
+  color: white;
+  padding: 0.75rem 2rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  box-shadow: 0 4px 16px rgba(37,99,235,0.25);
+  transition: background 0.2s;
+  border: none;
+}
+.btn-blue:hover { background: var(--blue-dk); }
+
+.btn-link-blue {
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--blue);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: none;
+  border: none;
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+.btn-link-blue:hover { color: var(--blue-dk); }
+
+.btn-icon {
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--slate-400);
+  border: 1px solid var(--slate-200);
+  border-radius: 0.375rem;
+  padding: 0.2rem 0.4rem;
+  background: white;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn-icon:hover { color: var(--blue); border-color: #93c5fd; }
+
+.btn-x { color: var(--slate-300); background: none; border: none; font-size: 1rem; padding: 0.25rem; transition: color 0.15s; }
+.btn-x:hover { color: #f87171; }
+.btn-x-modal { color: var(--slate-300); background: none; border: none; font-size: 1.25rem; line-height: 1; transition: color 0.15s; }
+.btn-x-modal:hover { color: var(--slate-600); }
+.btn-x-sm { color: var(--slate-300); background: none; border: none; font-size: 0.875rem; transition: color 0.15s; }
+.btn-x-sm:hover { color: #f87171; }
+
+/* ── Flex / Grid utilities ── */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.items-baseline { align-items: baseline; }
+.justify-between { justify-content: space-between; }
+.justify-end { justify-content: flex-end; }
+.flex-1 { flex: 1; }
+.flex-wrap { flex-wrap: wrap; }
+.flex-shrink-0 { flex-shrink: 0; }
+.min-w-0 { min-width: 0; }
+.gap-1 { gap: 0.25rem; }
+.gap-2 { gap: 0.5rem; }
+.gap-3 { gap: 0.75rem; }
+.gap-4 { gap: 1rem; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+@media (max-width: 560px) { .grid-2 { grid-template-columns: 1fr; } }
+
+/* ── Spacing ── */
+.mt-1 { margin-top: 0.25rem; }
+.mt-2 { margin-top: 0.5rem; }
+.mt-4 { margin-top: 1rem; }
+.mt-6 { margin-top: 1.5rem; }
+.mt-8 { margin-top: 2rem; }
+.mb-1 { margin-bottom: 0.25rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-3 { margin-bottom: 0.75rem; }
+.mb-4 { margin-bottom: 1rem; }
+.mb-6 { margin-bottom: 1.5rem; }
+.mb-8 { margin-bottom: 2rem; }
+.ml-4 { margin-left: 1rem; }
+.ml-2 { margin-left: 0.5rem; }
+.pt-4 { padding-top: 1rem; }
+.pt-6 { padding-top: 1.5rem; }
+.pl-2 { padding-left: 0.5rem; }
+.space-y > * + * { margin-top: 0.5rem; }
+.space-y-lg > * + * { margin-top: 1.5rem; }
+.space-y-xl > * + * { margin-top: 3rem; }
+
+/* ── Borders ── */
+.border-top { border-top: 1px solid var(--slate-100); }
+.border-top-2 { border-top: 2px solid #0f172a; }
+.bl-blue { border-left: 4px solid var(--blue); }
+.bl-orange { border-left: 2px solid #fb923c; }
+.bl-green { border-left: 2px solid #6ee7b7; }
+
+/* ── Text ── */
+.text-xs   { font-size: 0.6875rem; }
+.text-sm   { font-size: 0.8125rem; }
+.text-lg   { font-size: 1.125rem; }
+.text-xl   { font-size: 1.25rem; }
+.text-3xl  { font-size: 1.875rem; }
+.text-tiny { font-size: 0.5625rem; }
+.font-bold { font-weight: 700; }
+.uppercase { text-transform: uppercase; }
+.tracking-wide { letter-spacing: 0.08em; }
+.tracking-widest { letter-spacing: 0.15em; }
+.tracking-tight { letter-spacing: -0.03em; }
+.leading-relaxed { line-height: 1.65; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.c-slate4 { color: var(--slate-400); }
+.c-slate5 { color: var(--slate-500); }
+.c-slate7 { color: var(--slate-700); }
+.c-slate8 { color: var(--slate-800); }
+.c-slate9 { color: var(--slate-900); }
+.c-blue   { color: var(--blue); }
+.c-blue4  { color: #60a5fa; }
+.c-orange { color: var(--orange); }
+.c-green  { color: var(--emerald); }
+.c-white  { color: white; }
+.c-slate3 { color: var(--slate-300); }
+
+/* ── Badges & chips ── */
+.tag {
+  font-size: 0.5rem;
+  font-weight: 700;
+  background: var(--slate-100);
+  color: var(--slate-400);
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
+}
+.badge-memo {
+  font-size: 0.625rem;
+  font-weight: 700;
+  background: var(--em-lt);
+  color: #059669;
+  padding: 0.1rem 0.5rem;
+  border-radius: 0.25rem;
+}
+.badge-memo-small {
+  font-size: 0.55rem;
+  background: #fff7ed;
+  color: #c2410c;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.25rem;
+  font-weight: 700;
+}
+
+/* ── Song card ── */
+.song-card {
+  background: white;
+  border: 1px solid var(--slate-200);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.song-card h4 { font-weight: 700; color: var(--slate-800); margin-bottom: 0.5rem; }
+
+/* ── Inventory item ── */
+.inv-item {
+  background: #f0fdf4;
+  border: 1px solid var(--em-bd);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+.inv-name { font-weight: 700; color: var(--em-tx); font-size: 0.875rem; }
+.inv-note { font-size: 0.6875rem; color: #059669; margin-top: 0.25rem; line-height: 1.5; }
+
+/* ── Preset button strip ── */
+.preset-btn {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--slate-200);
+  background: white;
+  color: var(--slate-400);
+  transition: all 0.15s;
+}
+.preset-btn:hover { border-color: #6ee7b7; }
+.preset-btn.owned { background: var(--emerald); border-color: var(--emerald); color: white; }
+
+/* ── Summary section header ── */
+.sum-heading {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.dot-orange { background: #f97316; }
+.dot-green  { background: var(--emerald); }
+.dot-slate  { background: var(--slate-300); }
+
+/* ── Summary list ── */
+.sum-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1px;
+  background: var(--slate-200);
+  border: 1px solid var(--slate-200);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+.sum-row {
+  background: white;
+  padding: 0.875rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+.sum-row-name { font-weight: 700; color: var(--slate-800); font-size: 0.9375rem; }
+.sum-row-meta { font-size: 0.625rem; font-weight: 700; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.15rem; }
+.sum-row-note { font-size: 0.6875rem; color: var(--slate-500); margin-top: 0.4rem; line-height: 1.55; padding-left: 0.5rem; }
+.sum-row-count { font-size: 0.6875rem; font-weight: 700; color: var(--slate-400); white-space: nowrap; }
+.sum-empty { background: white; padding: 2rem; text-align: center; font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--slate-300); }
+
+/* ── Print header ── */
+.print-header { display: none; }
+.print-logo { font-family: 'Courier New', monospace; font-size: 1.75rem; font-weight: 700; letter-spacing: -0.04em; }
+
+/* ── Detail cards (per-song) ── */
+.detail-card {
+  background: white;
+  border: 1px solid var(--slate-100);
+  border-radius: 0.75rem;
+  padding: 0.875rem 1rem;
+}
+.detail-card h4 {
+  font-weight: 700;
+  color: var(--slate-700);
+  font-size: 0.75rem;
+  border-bottom: 1px solid var(--slate-50);
+  padding-bottom: 0.35rem;
+  margin-bottom: 0.4rem;
+}
+.detail-card p { font-size: 0.625rem; color: var(--slate-400); line-height: 1.6; }
+
+/* ── Empty states ── */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  background: white;
+  border: 1px dashed var(--slate-200);
+  border-radius: 1rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--slate-300);
+}
+
+/* ── Modal ── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  width: 100%;
+  max-width: 380px;
+  padding: 1.5rem;
+}
+.modal-title { font-weight: 700; color: var(--slate-800); }
+
+/* ── Toast ── */
+#toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--dark);
+  color: white;
+  padding: 0.625rem 1.25rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  z-index: 999;
+  white-space: nowrap;
+}
+#toast.show { opacity: 1; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: var(--slate-200); border-radius: 10px; }
+
+/* ── Print ── */
+@media print {
+  @page { size: A4; margin: 1.2cm 1.5cm; }
+  header, nav, .no-print, button { display: none !important; }
+  body { background: white; font-size: 11px; }
+  main { padding: 0 !important; }
+  .tab-content { display: none !important; }
+  #content-summary { display: block !important; }
+  .card, .summary-container { border: none !important; box-shadow: none !important; padding: 0 !important; border-radius: 0 !important; }
+  .print-header { display: block !important; margin-bottom: 0.8rem; padding-bottom: 0.5rem; }
+
+  .sum-list { grid-template-columns: 1fr 1fr !important; }
+  .sum-row { padding: 0.3rem 0.45rem !important; }
+  .sum-row-name { font-size: 0.75rem !important; }
+  .sum-row-meta { font-size: 0.55rem !important; }
+  .sum-row-note { font-size: 0.55rem !important; margin-top: 0.1rem !important; }
+  .sum-row-count { font-size: 0.55rem !important; }
+  .sum-heading { font-size: 0.55rem !important; margin-bottom: 0.25rem !important; }
+  .sum-section { margin-bottom: 0 !important; }
+  .space-y-xl > * + * { margin-top: 0.6rem !important; }
+
+  .detail-grid { grid-template-columns: 1fr 1fr 1fr !important; gap: 0.2rem !important; }
+  .detail-card { padding: 0.25rem 0.4rem !important; border-radius: 0.2rem !important; }
+  .detail-card h4 { font-size: 0.55rem !important; }
+  .detail-card p  { font-size: 0.5rem !important; }
+
+  .print-logo { font-size: 1.4rem; }
+  .print-date { font-size: 0.6rem; color: #666; }
+  .print-sub  { font-size: 0.55rem; color: var(--blue); letter-spacing: 0.2em; text-transform: uppercase; margin-top: 0.15rem; }
+}
+</style>
 </head>
-<body class="bg-slate-100 min-h-screen">
+<body>
 
-<!-- Toast -->
 <div id="toast"></div>
 
-<!-- Note Edit Modal -->
+<!-- Note Modal -->
 <div id="note-modal" class="modal-overlay" onclick="closeNoteModal(event)">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6" onclick="event.stopPropagation()">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="font-bold text-slate-800" id="modal-inst-label"></h3>
-            <button onclick="closeNoteModal()" class="text-slate-300 hover:text-slate-600 text-xl">✕</button>
-        </div>
-        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">仕様・メモ（サイズ／鍵盤数／材質など）</p>
-        <textarea id="modal-note-input" rows="4" placeholder="例: 4.3オクターブ、ローズウッド鍵盤&#10;例: 直径22インチ、スタンド込み&#10;例: C2〜F5、鉄製" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm outline-none focus:border-blue-500 resize-none transition-all"></textarea>
-        <div class="flex gap-3 mt-4">
-            <button onclick="saveNote()" class="flex-1 bg-[#1a1c23] text-white py-3 rounded-xl font-bold text-sm hover:bg-blue-600 transition-all">保存</button>
-            <button onclick="clearNote()" class="px-4 py-3 rounded-xl font-bold text-sm text-slate-400 hover:text-red-500 border border-slate-200 transition-all">消去</button>
-        </div>
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="flex justify-between items-center mb-4">
+      <span class="modal-title" id="modal-inst-label"></span>
+      <button class="btn-x-modal" onclick="closeNoteModal()">✕</button>
     </div>
+    <label class="label">仕様・メモ（サイズ／鍵盤数／材質など）</label>
+    <textarea id="modal-note-input" class="input-sm" rows="4"
+      placeholder="例: 4.3オクターブ、ローズウッド鍵盤&#10;例: 直径22インチ、スタンド込み&#10;例: C2〜F5、鉄製"></textarea>
+    <div class="flex gap-3 mt-4">
+      <button onclick="saveNote()" class="btn-primary flex-1" style="padding:0.75rem 1rem;">保存</button>
+      <button onclick="clearNote()" class="btn-icon" style="padding:0.75rem 1rem;">消去</button>
+    </div>
+  </div>
 </div>
 
-<!-- Add Custom Instrument to Master Modal -->
+<!-- Add Instrument Modal -->
 <div id="add-inst-modal" class="modal-overlay" onclick="closeAddInstModal(event)">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6" onclick="event.stopPropagation()">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="font-bold text-slate-800">楽器をマスターに追加</h3>
-            <button onclick="closeAddInstModal()" class="text-slate-300 hover:text-slate-600 text-xl">✕</button>
-        </div>
-        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">楽器名を入力（保存後、常にリストに表示されます）</p>
-        <input type="text" id="add-inst-input" placeholder="例: スティールパン、カウベル..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm outline-none focus:border-blue-500 transition-all" onkeydown="if(event.key==='Enter')confirmAddInst()">
-        <button onclick="confirmAddInst()" class="w-full mt-4 bg-[#1a1c23] text-white py-3 rounded-xl font-bold text-sm hover:bg-blue-600 transition-all">マスターに追加して選択する</button>
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="flex justify-between items-center mb-4">
+      <span class="modal-title">楽器をマスターに追加</span>
+      <button class="btn-x-modal" onclick="closeAddInstModal()">✕</button>
     </div>
+    <label class="label">楽器名（保存後、常にリストに表示されます）</label>
+    <input type="text" id="add-inst-input" class="input-sm"
+      placeholder="例: スティールパン、カウベル..."
+      onkeydown="if(event.key==='Enter')confirmAddInst()">
+    <button onclick="confirmAddInst()" class="btn-primary mt-4" style="width:100%;padding:0.75rem;">マスターに追加して選択する</button>
+  </div>
 </div>
 
 <!-- Header -->
-<header class="bg-[#1a1c23] text-white px-6 py-5 shadow-xl no-print">
-    <div class="max-w-5xl mx-auto flex justify-between items-center">
-        <div class="flex items-baseline gap-3">
-            <h1 class="mono text-3xl font-bold tracking-tighter">NEED-PERC</h1>
-            <span class="text-[10px] font-bold text-blue-400 tracking-[0.3em] uppercase">for Brass Band</span>
-        </div>
-        <button onclick="resetData()" class="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-red-400 transition-colors">System Reset</button>
+<header class="no-print">
+  <div class="header-inner">
+    <div class="flex items-baseline">
+      <span class="logo">NEED-PERC</span>
+      <span class="logo-sub">for Brass Band</span>
     </div>
+    <button class="btn-reset" onclick="resetData()">System Reset</button>
+  </div>
 </header>
 
-<main class="max-w-5xl mx-auto px-4 py-8">
+<main>
+  <!-- Nav -->
+  <nav class="no-print">
+    <button class="tab-btn active" id="tab-input"     onclick="switchTab('input')">1. PROGRAM</button>
+    <button class="tab-btn"        id="tab-inventory" onclick="switchTab('inventory')">2. INVENTORY</button>
+    <button class="tab-btn"        id="tab-summary"   onclick="switchTab('summary')">3. SUMMARY</button>
+  </nav>
 
-    <!-- Nav -->
-    <nav class="flex mb-8 bg-slate-200 p-1 rounded-xl shadow-inner no-print">
-        <button onclick="switchTab('input')"     id="tab-input"     class="tab-btn flex-1 py-3 px-4 rounded-lg font-bold transition-all text-blue-600 bg-white shadow-sm text-sm">1. PROGRAM</button>
-        <button onclick="switchTab('inventory')" id="tab-inventory" class="tab-btn flex-1 py-3 px-4 rounded-lg font-bold transition-all text-slate-500 hover:text-slate-700 text-sm">2. INVENTORY</button>
-        <button onclick="switchTab('summary')"   id="tab-summary"   class="tab-btn flex-1 py-3 px-4 rounded-lg font-bold transition-all text-slate-500 hover:text-slate-700 text-sm">3. SUMMARY</button>
-    </nav>
+  <!-- ── TAB 1: PROGRAM ── -->
+  <section id="content-input" class="tab-content active">
+    <div class="card">
+      <h2 class="section-title blue">曲目と楽器の登録</h2>
 
-    <!-- ═══ TAB 1: PROGRAM ═══ -->
-    <section id="content-input" class="tab-content active space-y-8">
-        <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
-            <h2 class="text-xl font-bold text-slate-800 border-l-4 border-blue-600 pl-3 mb-6">曲目と楽器の登録</h2>
-            <div class="space-y-6">
+      <label class="label">Song Title</label>
+      <input type="text" id="input-song-name" class="input-text mb-6" placeholder="Music of the Spheres">
 
-                <!-- Song name -->
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Song Title</label>
-                    <input type="text" id="input-song-name" placeholder="Music of the Spheres"
-                        class="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition-all text-lg font-bold">
-                </div>
+      <div class="flex justify-between items-center mb-3">
+        <label class="label" style="margin:0">Instrument Selector</label>
+        <button class="btn-link-blue" onclick="openAddInstModal()">＋ 楽器をマスターに追加</button>
+      </div>
+      <div id="instrument-selector" class="inst-grid mb-6"></div>
 
-                <!-- Instrument selector -->
-                <div>
-                    <div class="flex items-center justify-between mb-3">
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Instrument Selector</label>
-                        <button onclick="openAddInstModal()" class="text-[10px] font-bold text-blue-500 hover:text-blue-700 uppercase tracking-widest flex items-center gap-1 transition-colors">
-                            <span class="text-base leading-none">+</span> 楽器をマスターに追加
-                        </button>
-                    </div>
-                    <div id="instrument-selector" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2"></div>
-                </div>
+      <div class="flex justify-end pt-4 border-top">
+        <button class="btn-primary" onclick="registerSong()">曲を登録する</button>
+      </div>
+    </div>
 
-                <!-- Register button -->
-                <div class="flex justify-end pt-4 border-t border-slate-50">
-                    <button onclick="registerSong()" class="bg-[#1a1c23] text-white px-10 py-4 rounded-xl font-bold hover:bg-blue-600 transition-all shadow-lg active:scale-95">
-                        曲を登録する
-                    </button>
-                </div>
-            </div>
+    <div class="mt-6">
+      <div class="label px-1 mb-3">Registered History</div>
+      <div id="songs-list-container" class="grid-2"></div>
+    </div>
+  </section>
+
+  <!-- ── TAB 2: INVENTORY ── -->
+  <section id="content-inventory" class="tab-content">
+    <div class="card">
+      <h2 class="section-title green">自団体所有楽器</h2>
+      <p class="c-slate4 text-sm ml-4 mb-8">
+        ここに登録した楽器は「要レンタル」から除外されます。<br>
+        <span class="text-tiny">📝 ボタンでサイズ・仕様などのメモを登録できます。</span>
+      </p>
+
+      <label class="label">Select Owned</label>
+      <div id="inventory-presets" class="flex flex-wrap gap-2 mb-8"></div>
+
+      <div class="pt-6 border-top">
+        <label class="label mb-4">Active Inventory List</label>
+        <div id="inventory-list" class="space-y"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── TAB 3: SUMMARY ── -->
+  <section id="content-summary" class="tab-content">
+    <div class="card summary-container">
+      <!-- Print header -->
+      <div class="print-header border-top-2">
+        <div class="flex justify-between items-baseline mt-1">
+          <span class="print-logo">NEED-PERC</span>
+          <span class="print-date" id="print-date"></span>
+        </div>
+        <div class="print-sub">Percussion Requirement List</div>
+      </div>
+
+      <!-- Screen header -->
+      <div class="flex justify-between items-end mb-8 no-print">
+        <div>
+          <h2 class="text-3xl font-bold tracking-tight c-slate9">SUMMARY</h2>
+          <p class="text-sm c-slate4 mt-1">全プログラムの楽器重複を自動整理</p>
+        </div>
+        <button class="btn-blue" onclick="window.print()">📄 PRINT / PDF</button>
+      </div>
+
+      <div class="space-y-xl">
+        <div class="sum-section">
+          <div class="sum-heading c-orange">
+            <span class="dot dot-orange"></span> 1. 要手配・レンタル楽器
+          </div>
+          <div id="summary-rental-list" class="sum-list"></div>
         </div>
 
-        <!-- Registered songs -->
-        <div class="space-y-4">
-            <h3 class="font-bold text-slate-500 text-xs uppercase tracking-widest px-1">Registered History</h3>
-            <div id="songs-list-container" class="grid gap-3 sm:grid-cols-2"></div>
+        <div class="sum-section">
+          <div class="sum-heading c-green">
+            <span class="dot dot-green"></span> 2. 自前確保・所有楽器
+          </div>
+          <div id="summary-owned-list" class="sum-list"></div>
         </div>
-    </section>
 
-    <!-- ═══ TAB 2: INVENTORY ═══ -->
-    <section id="content-inventory" class="tab-content space-y-6">
-        <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
-            <h2 class="text-xl font-bold text-slate-800 border-l-4 border-emerald-500 pl-3 mb-1">自団体所有楽器</h2>
-            <p class="text-sm text-slate-400 ml-4 mb-8">ここに登録した楽器は「要レンタル」から除外されます。<br>
-            <span class="text-[10px]">📝 ボタンでサイズ・仕様などのメモを登録できます。</span></p>
-
-            <div>
-                <label class="block text-[10px] font-bold text-slate-400 mb-3 uppercase tracking-widest">Select Owned</label>
-                <div id="inventory-presets" class="flex flex-wrap gap-2"></div>
-            </div>
-
-            <div class="pt-8 border-t border-slate-100 mt-8">
-                <label class="block text-[10px] font-bold text-slate-400 mb-4 uppercase tracking-widest">Active Inventory List</label>
-                <div id="inventory-list" class="space-y-2"></div>
-            </div>
+        <div class="sum-section no-print">
+          <div class="sum-heading c-slate4">
+            <span class="dot dot-slate"></span> 3. プログラム別編成内訳
+          </div>
+          <div id="summary-details-list" class="detail-grid grid-2"></div>
         </div>
-    </section>
-
-    <!-- ═══ TAB 3: SUMMARY ═══ -->
-    <section id="content-summary" class="tab-content">
-        <div class="bg-white p-10 rounded-2xl shadow-sm border border-slate-200 summary-container">
-            <!-- Print header -->
-            <div class="print-header mb-10 pb-6 border-b-2 border-slate-900">
-                <div class="flex justify-between items-baseline">
-                    <h1 class="mono text-3xl font-bold tracking-tighter">NEED-PERC</h1>
-                    <p class="text-slate-500 text-xs font-bold" id="print-date"></p>
-                </div>
-                <p class="text-[10px] font-bold text-blue-600 tracking-[0.2em] uppercase mt-1">Percussion Requirement List</p>
-            </div>
-
-            <div class="flex justify-between items-end mb-10 no-print">
-                <div>
-                    <h2 class="text-3xl font-bold text-slate-900 tracking-tight">SUMMARY</h2>
-                    <p class="text-sm text-slate-400 font-medium">全プログラムの楽器重複を自動整理</p>
-                </div>
-                <button onclick="window.print()" class="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all">
-                    📄 PRINT / PDF
-                </button>
-            </div>
-
-                <div class="space-y-12">
-                <!-- Rental -->
-                <div class="sum-section">
-                    <h3 class="text-xs font-bold text-orange-600 uppercase tracking-widest mb-4 flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 bg-orange-500 rounded-full inline-block"></span> 1. 要手配・レンタル楽器
-                    </h3>
-                    <div id="summary-rental-list" class="grid gap-px bg-slate-200 border border-slate-200 rounded-xl overflow-hidden"></div>
-                </div>
-
-                <!-- Owned -->
-                <div class="sum-section">
-                    <h3 class="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-4 flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full inline-block"></span> 2. 自前確保・所有楽器
-                    </h3>
-                    <div id="summary-owned-list" class="grid gap-px bg-slate-200 border border-slate-200 rounded-xl overflow-hidden"></div>
-                </div>
-
-                <!-- Per-song breakdown -->
-                <div class="no-print sum-section">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 bg-slate-300 rounded-full inline-block"></span> 3. プログラム別編成内訳
-                    </h3>
-                    <div id="summary-details-list" class="grid gap-3 sm:grid-cols-2"></div>
-                </div>
-                </div>
-        </div>
-    </section>
-
+      </div>
+    </div>
+  </section>
 </main>
 
 <script>
-// ── Default data ─────────────────────────────────────────────
+// ── Instruments ───────────────────────────────────────────────
 const DEFAULT_INSTRUMENTS = [
-    "ウィンドチャイム","ウッドブロック","ヴィブラフォン",
-    "カスタネット","カバサ","クラベス","コンガ","コンサートトム",
-    "グロッケン",
-    "サスペンデッドシンバル","シロフォン","スネアドラム","スラップスティック","スレイベル",
-    "タンバリン","チューブラーベル","ティンパニ","トライアングル","ドラムセット",
-    "バスドラム","ベルツリー","ボンゴ","ホイッスル","フィンガーシンバル",
-    "マラカス","マリンバ","マレットスタンド",
-    "パーカッションテーブル",
-    "合わせシンバル","銅鑼"
-].sort((a, b) => a.localeCompare(b, 'ja'));
+  "ウィンドチャイム","ウッドブロック","ヴィブラフォン",
+  "カスタネット","カバサ","クラベス","コンガ","コンサートトム",
+  "グロッケン",
+  "サスペンデッドシンバル","シロフォン","スネアドラム","スラップスティック","スレイベル",
+  "タンバリン","チューブラーベル","ティンパニ","トライアングル","ドラムセット",
+  "バスドラム","ベルツリー","ボンゴ","ホイッスル","フィンガーシンバル",
+  "マラカス","マリンバ","マレットスタンド",
+  "パーカッションテーブル",
+  "合わせシンバル","銅鑼"
+].sort((a,b) => a.localeCompare(b,'ja'));
 
 // ── State ─────────────────────────────────────────────────────
 let state = {
-    songs: [],
-    inventory: ["スネアドラム","バスドラム","ティンパニ","合わせシンバル"],
-    customInstruments: [],   // user-added master instruments
-    instrumentNotes: {},     // {instName: "note string"}
-    selectedInForm: []
+  songs: [],
+  inventory: ["スネアドラム","バスドラム","ティンパニ","合わせシンバル"],
+  customInstruments: [],
+  instrumentNotes: {},
+  selectedInForm: []
 };
-
-// ── Storage ───────────────────────────────────────────────────
 function saveData() { localStorage.setItem('need_perc_v2', JSON.stringify(state)); }
-function loadData() {
-    const s = localStorage.getItem('need_perc_v2');
-    if (s) state = { ...state, ...JSON.parse(s) };
-}
-
-function allInstruments() {
-    return [...DEFAULT_INSTRUMENTS, ...state.customInstruments];
-}
+function loadData() { const s=localStorage.getItem('need_perc_v2'); if(s) state={...state,...JSON.parse(s)}; }
+function allInstruments() { return [...DEFAULT_INSTRUMENTS,...state.customInstruments]; }
 
 // ── Toast ─────────────────────────────────────────────────────
 function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg; t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2000);
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
 }
 
-// ── Tab switching ─────────────────────────────────────────────
+// ── Tabs ──────────────────────────────────────────────────────
 function switchTab(id) {
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    document.getElementById('content-' + id).classList.add('active');
-    document.querySelectorAll('.tab-btn').forEach(b => {
-        b.classList.remove('text-blue-600','bg-white','shadow-sm');
-        b.classList.add('text-slate-500');
-    });
-    const btn = document.getElementById('tab-' + id);
-    btn.classList.remove('text-slate-500');
-    btn.classList.add('text-blue-600','bg-white','shadow-sm');
-    if (id === 'summary') renderSummary();
-    if (id === 'inventory') renderInventory();
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('content-'+id).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  if(id==='summary') renderSummary();
+  if(id==='inventory') renderInventory();
 }
 
 // ── Note Modal ────────────────────────────────────────────────
-let _noteTarget = null;
-function openNoteModal(inst) {
-    _noteTarget = inst;
-    document.getElementById('modal-inst-label').textContent = inst;
-    document.getElementById('modal-note-input').value = state.instrumentNotes[inst] || '';
-    document.getElementById('note-modal').classList.add('open');
-    setTimeout(() => document.getElementById('modal-note-input').focus(), 100);
+let _noteTarget=null;
+function openNoteModal(inst){
+  _noteTarget=inst;
+  document.getElementById('modal-inst-label').textContent=inst;
+  document.getElementById('modal-note-input').value=state.instrumentNotes[inst]||'';
+  document.getElementById('note-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('modal-note-input').focus(),80);
 }
-function closeNoteModal(e) {
-    if (e && e.target !== document.getElementById('note-modal')) return;
-    document.getElementById('note-modal').classList.remove('open');
+function closeNoteModal(e){
+  if(e&&e.target!==document.getElementById('note-modal')) return;
+  document.getElementById('note-modal').classList.remove('open');
 }
-function saveNote() {
-    const val = document.getElementById('modal-note-input').value.trim();
-    if (val) state.instrumentNotes[_noteTarget] = val;
-    else delete state.instrumentNotes[_noteTarget];
-    saveData(); renderInventory(); renderFormSelectors();
-    document.getElementById('note-modal').classList.remove('open');
-    showToast('メモを保存しました');
+function saveNote(){
+  const v=document.getElementById('modal-note-input').value.trim();
+  if(v) state.instrumentNotes[_noteTarget]=v; else delete state.instrumentNotes[_noteTarget];
+  saveData(); renderInventory(); renderFormSelectors();
+  document.getElementById('note-modal').classList.remove('open');
+  showToast('メモを保存しました');
 }
-function clearNote() {
-    document.getElementById('modal-note-input').value = '';
-}
+function clearNote(){ document.getElementById('modal-note-input').value=''; }
 
-// ── Add Instrument to Master Modal ───────────────────────────
-function openAddInstModal() {
-    document.getElementById('add-inst-input').value = '';
-    document.getElementById('add-inst-modal').classList.add('open');
-    setTimeout(() => document.getElementById('add-inst-input').focus(), 100);
+// ── Add Instrument Modal ──────────────────────────────────────
+function openAddInstModal(){
+  document.getElementById('add-inst-input').value='';
+  document.getElementById('add-inst-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('add-inst-input').focus(),80);
 }
-function closeAddInstModal(e) {
-    if (e && e.target !== document.getElementById('add-inst-modal')) return;
+function closeAddInstModal(e){
+  if(e&&e.target!==document.getElementById('add-inst-modal')) return;
+  document.getElementById('add-inst-modal').classList.remove('open');
+}
+function confirmAddInst(){
+  const v=document.getElementById('add-inst-input').value.trim();
+  if(!v) return;
+  if(allInstruments().includes(v)){
+    showToast('すでにリストにあります');
     document.getElementById('add-inst-modal').classList.remove('open');
-}
-function confirmAddInst() {
-    const val = document.getElementById('add-inst-input').value.trim();
-    if (!val) return;
-    if (allInstruments().includes(val)) {
-        showToast('すでにリストにあります');
-        document.getElementById('add-inst-modal').classList.remove('open');
-        // select it
-        if (!state.selectedInForm.includes(val)) state.selectedInForm.push(val);
-        renderFormSelectors();
-        return;
-    }
-    state.customInstruments.push(val);
-    state.selectedInForm.push(val);
-    saveData();
-    renderFormSelectors();
-    document.getElementById('add-inst-modal').classList.remove('open');
-    showToast(`「${val}」をマスターに追加しました`);
+    if(!state.selectedInForm.includes(v)) state.selectedInForm.push(v);
+    renderFormSelectors(); return;
+  }
+  state.customInstruments.push(v);
+  state.selectedInForm.push(v);
+  saveData(); renderFormSelectors();
+  document.getElementById('add-inst-modal').classList.remove('open');
+  showToast(`「${v}」をマスターに追加しました`);
 }
 
-// ── Form instrument selector ──────────────────────────────────
-function toggleFormInstrument(inst) {
-    const i = state.selectedInForm.indexOf(inst);
-    if (i === -1) state.selectedInForm.push(inst);
-    else state.selectedInForm.splice(i, 1);
-    renderFormSelectors();
+// ── Instrument selector ───────────────────────────────────────
+function toggleFormInstrument(inst){
+  const i=state.selectedInForm.indexOf(inst);
+  if(i===-1) state.selectedInForm.push(inst); else state.selectedInForm.splice(i,1);
+  renderFormSelectors();
+}
+function renderFormSelectors(){
+  document.getElementById('instrument-selector').innerHTML=allInstruments().map(inst=>{
+    const active=state.selectedInForm.includes(inst);
+    const custom=state.customInstruments.includes(inst);
+    const hasNote=!!state.instrumentNotes[inst];
+    return `<button onclick="toggleFormInstrument('${esc(inst)}')"
+      class="inst-btn${active?' active':''}${custom?' custom':''}">${inst}${hasNote?'<span class="note-dot"></span>':''}</button>`;
+  }).join('');
 }
 
-function renderFormSelectors() {
-    const container = document.getElementById('instrument-selector');
-    const all = allInstruments();
-    container.innerHTML = all.map(inst => {
-        const active = state.selectedInForm.includes(inst);
-        const isCustom = state.customInstruments.includes(inst);
-        const hasNote = !!state.instrumentNotes[inst];
-        return `<button onclick="toggleFormInstrument('${esc(inst)}')"
-            class="text-[11px] p-2.5 rounded-lg border transition-all font-bold text-left relative
-            ${active ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-white border-slate-200 text-slate-500 hover:border-blue-200'}
-            ${isCustom ? 'border-dashed' : ''}">
-            ${inst}
-            ${hasNote ? `<span class="absolute top-1 right-1 w-1.5 h-1.5 rounded-full ${active ? 'bg-blue-300' : 'bg-slate-300'}"></span>` : ''}
-        </button>`;
-    }).join('');
+// ── Songs ─────────────────────────────────────────────────────
+function registerSong(){
+  const el=document.getElementById('input-song-name');
+  const name=el.value.trim()||el.placeholder;
+  if(!state.selectedInForm.length){ showToast('楽器を1つ以上選んでください'); return; }
+  state.songs.push({id:Date.now(),name,instruments:[...state.selectedInForm]});
+  el.value=''; state.selectedInForm=[];
+  saveData(); renderFormSelectors(); renderSongsList();
+  showToast(`「${name}」を登録しました`);
 }
-
-// ── Song list ─────────────────────────────────────────────────
-function registerSong() {
-    const nameInput = document.getElementById('input-song-name');
-    const name = nameInput.value.trim() || nameInput.placeholder;
-    if (state.selectedInForm.length === 0) {
-        showToast('楽器を1つ以上選んでください'); return;
-    }
-    state.songs.push({ id: Date.now(), name, instruments: [...state.selectedInForm] });
-    nameInput.value = '';
-    state.selectedInForm = [];
-    saveData(); renderFormSelectors(); renderSongsList();
-    showToast(`「${name}」を登録しました`);
-}
-
-function deleteSong(id) {
-    state.songs = state.songs.filter(s => s.id !== id);
-    saveData(); renderSongsList();
-}
-
-function renderSongsList() {
-    const c = document.getElementById('songs-list-container');
-    if (!state.songs.length) {
-        c.innerHTML = `<div class="col-span-full text-center py-12 text-slate-300 bg-white rounded-2xl border border-dashed border-slate-200 font-bold text-xs uppercase tracking-widest">No Songs Added</div>`;
-        return;
-    }
-    c.innerHTML = [...state.songs].reverse().map(song => `
-        <div class="bg-white p-5 rounded-xl border border-slate-200 flex justify-between items-start group">
-            <div class="flex-1">
-                <h4 class="font-bold text-slate-800">${song.name}</h4>
-                <div class="flex flex-wrap gap-1 mt-2">
-                    ${song.instruments.map(i => `<span class="text-[9px] font-bold bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded">${i}</span>`).join('')}
-                </div>
-            </div>
-            <button onclick="deleteSong(${song.id})" class="text-slate-200 hover:text-red-500 p-2 transition-colors ml-2 flex-shrink-0">✕</button>
-        </div>
-    `).join('');
+function deleteSong(id){ state.songs=state.songs.filter(s=>s.id!==id); saveData(); renderSongsList(); }
+function renderSongsList(){
+  const c=document.getElementById('songs-list-container');
+  if(!state.songs.length){
+    c.innerHTML='<div class="empty-state" style="grid-column:1/-1">No Songs Added</div>'; return;
+  }
+  c.innerHTML=[...state.songs].reverse().map(s=>`
+    <div class="song-card">
+      <div class="flex-1">
+        <h4>${s.name}</h4>
+        <div class="flex flex-wrap gap-1">${s.instruments.map(i=>`<span class="tag">${i}</span>`).join('')}</div>
+      </div>
+      <button class="btn-x ml-2 flex-shrink-0" onclick="deleteSong(${s.id})">✕</button>
+    </div>`).join('');
 }
 
 // ── Inventory ─────────────────────────────────────────────────
-function toggleInventory(inst) {
-    const i = state.inventory.indexOf(inst);
-    if (i === -1) state.inventory.push(inst);
-    else state.inventory.splice(i, 1);
-    saveData(); renderInventory();
+function toggleInventory(inst){
+  const i=state.inventory.indexOf(inst);
+  if(i===-1) state.inventory.push(inst); else state.inventory.splice(i,1);
+  saveData(); renderInventory();
 }
+function removeFromInventory(inst){ state.inventory=state.inventory.filter(x=>x!==inst); saveData(); renderInventory(); }
+function renderInventory(){
+  document.getElementById('inventory-presets').innerHTML=allInstruments().map(inst=>{
+    const owned=state.inventory.includes(inst);
+    return `<button onclick="toggleInventory('${esc(inst)}')" class="preset-btn${owned?' owned':''}">${owned?'✓ ':'+ '}${inst}</button>`;
+  }).join('');
 
-function removeFromInventory(inst) {
-    state.inventory = state.inventory.filter(x => x !== inst);
-    saveData(); renderInventory();
-}
-
-function renderInventory() {
-    // Preset buttons
-    const presets = document.getElementById('inventory-presets');
-    presets.innerHTML = allInstruments().map(inst => {
-        const isOwned = state.inventory.includes(inst);
-        return `<button onclick="toggleInventory('${esc(inst)}')"
-            class="text-[11px] px-3 py-2 rounded-lg border transition-all font-bold
-            ${isOwned ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-400 hover:border-emerald-200'}">
-            ${isOwned ? '✓ ' : '+ '}${inst}
-        </button>`;
-    }).join('');
-
-    // Owned list with notes
-    const list = document.getElementById('inventory-list');
-    const owned = [...state.inventory].sort((a, b) => a.localeCompare(b, 'ja'));
-    list.innerHTML = owned.map(inst => {
-        const note = state.instrumentNotes[inst];
-        return `
-        <div class="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 flex items-start gap-3">
-            <div class="flex-1">
-                <div class="flex items-center gap-2">
-                    <span class="font-bold text-emerald-700 text-sm">${inst}</span>
-                    ${note ? `<span class="text-[10px] bg-emerald-100 text-emerald-500 px-2 py-0.5 rounded font-bold">メモあり</span>` : ''}
-                </div>
-                ${note ? `<p class="text-[11px] text-emerald-500 mt-0.5 leading-relaxed">${note.replace(/\n/g,'　/　')}</p>` : ''}
-            </div>
-            <div class="flex items-center gap-2 flex-shrink-0">
-                <button onclick="openNoteModal('${esc(inst)}')" title="メモを編集"
-                    class="text-[10px] font-bold text-slate-400 hover:text-blue-500 transition-colors border border-slate-200 hover:border-blue-300 rounded-lg px-2 py-1 bg-white">
-                    📝 メモ
-                </button>
-                <button onclick="removeFromInventory('${esc(inst)}')" class="text-slate-200 hover:text-red-500 transition-colors text-sm">✕</button>
-            </div>
-        </div>`;
-    }).join('') || '<div class="text-slate-300 text-xs font-bold uppercase tracking-widest py-4">No instruments owned yet</div>';
+  const owned=[...state.inventory].sort((a,b)=>a.localeCompare(b,'ja'));
+  document.getElementById('inventory-list').innerHTML=owned.map(inst=>{
+    const note=state.instrumentNotes[inst];
+    return `<div class="inv-item">
+      <div class="flex-1">
+        <div class="flex items-center gap-2">
+          <span class="inv-name">${inst}</span>
+          ${note?'<span class="badge-memo">メモあり</span>':''}
+        </div>
+        ${note?`<div class="inv-note">${note.replace(/\n/g,'　/　')}</div>`:''}
+      </div>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <button class="btn-icon" onclick="openNoteModal('${esc(inst)}')">📝 メモ</button>
+        <button class="btn-x-sm" onclick="removeFromInventory('${esc(inst)}')">✕</button>
+      </div>
+    </div>`;
+  }).join('')||'<div class="text-tiny font-bold uppercase tracking-widest c-slate3 py-4">No instruments owned yet</div>';
 }
 
 // ── Summary ───────────────────────────────────────────────────
-function renderSummary() {
-    const usageMap = {};
-    state.songs.forEach(s => s.instruments.forEach(i => {
-        if (!usageMap[i]) usageMap[i] = [];
-        usageMap[i].push(s.name);
-    }));
-    const sorted = Object.keys(usageMap).sort((a, b) => a.localeCompare(b, 'ja'));
-    const rentalEl = document.getElementById('summary-rental-list');
-    const ownedEl  = document.getElementById('summary-owned-list');
-    const detailEl = document.getElementById('summary-details-list');
+function renderSummary(){
+  const usageMap={};
+  state.songs.forEach(s=>s.instruments.forEach(i=>{
+    if(!usageMap[i]) usageMap[i]=[];
+    usageMap[i].push(s.name);
+  }));
+  const sorted=Object.keys(usageMap).sort((a,b)=>a.localeCompare(b,'ja'));
+  const rentalEl=document.getElementById('summary-rental-list');
+  const ownedEl=document.getElementById('summary-owned-list');
+  const detailEl=document.getElementById('summary-details-list');
+  rentalEl.innerHTML=ownedEl.innerHTML=detailEl.innerHTML='';
 
-    rentalEl.innerHTML = ownedEl.innerHTML = detailEl.innerHTML = '';
+  function row(inst,isOwned){
+    const note=state.instrumentNotes[inst];
+    return `<div class="sum-row">
+      <div class="flex-1 min-w-0">
+        <div class="sum-row-name">${inst}</div>
+        <div class="sum-row-meta truncate">${usageMap[inst].join(' / ')}</div>
+        ${note?`<div class="sum-row-note ${isOwned?'bl-green':'bl-orange'}">${note.replace(/\n/g,'<br>')}</div>`:''}
+      </div>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <span class="sum-row-count">${usageMap[inst].length}曲</span>
+        <button class="btn-icon no-print" onclick="openNoteModal('${esc(inst)}')">📝</button>
+      </div>
+    </div>`;
+  }
 
-    function summaryRow(inst, isOwned) {
-        const note = state.instrumentNotes[inst];
-        return `<div class="sum-row p-4 bg-white">
-            <div class="flex justify-between items-start gap-2">
-                <div class="flex-1 min-w-0">
-                    <div class="sum-row-name font-bold text-slate-800">${inst}</div>
-                    <div class="sum-row-meta text-[10px] text-slate-400 font-bold uppercase tracking-wide mt-0.5 truncate">
-                        ${usageMap[inst].join(' / ')}
-                    </div>
-                    ${note ? `<div class="sum-row-note text-[10px] text-slate-500 mt-1 leading-relaxed border-l-2 ${isOwned ? 'border-emerald-300' : 'border-orange-300'} pl-1.5">${note.replace(/\n/g,'<br>')}</div>` : ''}
-                </div>
-                <div class="flex items-center gap-2 flex-shrink-0">
-                    <span class="sum-row-count text-[10px] font-bold text-slate-400">${usageMap[inst].length}曲</span>
-                    <button onclick="openNoteModal('${esc(inst)}')" title="メモ" class="no-print text-[10px] font-bold text-slate-300 hover:text-blue-500 transition-colors border border-slate-100 hover:border-blue-300 rounded px-1.5 py-0.5">📝</button>
-                </div>
-            </div>
-        </div>`;
-    }
+  sorted.forEach(inst=>{
+    if(state.inventory.includes(inst)) ownedEl.innerHTML+=row(inst,true);
+    else rentalEl.innerHTML+=row(inst,false);
+  });
 
-    sorted.forEach(inst => {
-        const isOwned = state.inventory.includes(inst);
-        if (isOwned) ownedEl.innerHTML += summaryRow(inst, true);
-        else rentalEl.innerHTML += summaryRow(inst, false);
-    });
+  if(!rentalEl.innerHTML) rentalEl.innerHTML='<div class="sum-empty">No Rentals Needed 🎉</div>';
+  if(!ownedEl.innerHTML)  ownedEl.innerHTML='<div class="sum-empty">No Owned Instruments Matched</div>';
 
-    if (!rentalEl.innerHTML) rentalEl.innerHTML = '<div class="p-8 text-slate-300 text-center font-bold bg-white text-xs uppercase tracking-widest">No Rentals Needed 🎉</div>';
-    if (!ownedEl.innerHTML)  ownedEl.innerHTML  = '<div class="p-8 text-slate-300 text-center font-bold bg-white text-xs uppercase tracking-widest">No Owned Instruments Matched</div>';
-
-    state.songs.forEach(song => {
-        detailEl.innerHTML += `
-        <div class="bg-white p-4 rounded-xl border border-slate-100">
-            <h4 class="font-bold text-slate-700 text-xs mb-2 border-b border-slate-50 pb-1">${song.name}</h4>
-            <p class="text-[10px] text-slate-400 font-medium leading-relaxed">${song.instruments.join(' / ')}</p>
-        </div>`;
-    });
-
-    document.getElementById('print-date').textContent = new Date().toLocaleDateString('ja-JP', {year:'numeric',month:'long',day:'numeric'});
+  state.songs.forEach(s=>{
+    detailEl.innerHTML+=`<div class="detail-card"><h4>${s.name}</h4><p>${s.instruments.join(' / ')}</p></div>`;
+  });
+  document.getElementById('print-date').textContent=new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'});
 }
 
 // ── Reset ─────────────────────────────────────────────────────
-function resetData() {
-    if (confirm('すべてのデータをリセットしますか？\nThis will erase all songs, inventory, and notes.')) {
-        localStorage.removeItem('need_perc_v2');
-        location.reload();
-    }
+function resetData(){
+  if(confirm('すべてのデータをリセットしますか？\nThis will erase all songs, inventory, and notes.')){
+    localStorage.removeItem('need_perc_v2'); location.reload();
+  }
 }
+function esc(s){ return s.replace(/'/g,"\\'"); }
 
-// ── Helper ────────────────────────────────────────────────────
-function esc(str) { return str.replace(/'/g, "\\'"); }
-
-// ── Init ──────────────────────────────────────────────────────
-window.onload = () => {
-    loadData();
-    renderFormSelectors();
-    renderSongsList();
-    renderInventory();
-};
+window.onload=()=>{ loadData(); renderFormSelectors(); renderSongsList(); renderInventory(); };
 </script>
 </body>
 </html>
